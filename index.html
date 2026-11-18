@@ -185,6 +185,7 @@
 
     /* Graph Box */
     .chart-wrap {
+      display: none;
       background: rgba(255, 255, 255, 0.78);
       border-radius: 10px;
       border: 2px solid #8c8258;
@@ -227,7 +228,7 @@
 
     <button class="plot-btn" onclick="plotGraph()">Plot Graph</button>
 
-    <div class="chart-wrap">
+    <div class="chart-wrap" id="chartContainer">
       <canvas id="trackerChart" height="220"></canvas>
     </div>
   </div>
@@ -237,8 +238,8 @@
     const AUTH_KEY = "cadet_tracker_unlocked_v1";
     const DATA_KEY = "cadet_tracker_data_v1";
     const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    let chartInstance = null;
 
-    // Check if already unlocked on this device
     function initAuth() {
       if (localStorage.getItem(AUTH_KEY) === "true") {
         showApp();
@@ -263,10 +264,8 @@
       document.getElementById("lockScreen").style.display = "none";
       document.getElementById("appContent").style.display = "block";
       renderTable();
-      initChart();
     }
 
-    // Default State
     let state = JSON.parse(localStorage.getItem(DATA_KEY)) || {
       week: "06th Nov to 12th Nov",
       columns: [
@@ -278,7 +277,7 @@
         "Self-study",
         "Geopoliticals"
       ],
-      scores: {} // key: "dayIdx-colIdx" -> 0, 0.5, or 1
+      scores: {}
     };
 
     const weekTitleEl = document.getElementById("weekTitle");
@@ -298,12 +297,10 @@
       headerRow.innerHTML = "";
       tbody.innerHTML = "";
 
-      // Top-left cell: "Day"
       const dayTh = document.createElement("th");
       dayTh.textContent = "Day";
       headerRow.appendChild(dayTh);
 
-      // Editable Goal Columns
       state.columns.forEach((colName, cIdx) => {
         const th = document.createElement("th");
         const input = document.createElement("input");
@@ -318,7 +315,6 @@
         headerRow.appendChild(th);
       });
 
-      // 7 Day Rows (Rows 2 to 8)
       DAYS.forEach((dayName, dIdx) => {
         const tr = document.createElement("tr");
         const dayTd = document.createElement("td");
@@ -380,3 +376,13 @@
       for (let d = 0; d < 7; d++) {
         delete state.scores[`${d}-${removedIdx}`];
       }
+      saveState();
+      renderTable();
+    }
+
+    function resetScores() {
+      if (confirm("Reset all scores to 0 for this week?")) {
+        state.scores = {};
+        saveState();
+        renderTable();
+        
