@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Weekly Cadet Tracker</title>
+  <script src="https://jsdelivr.net"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      padding: 16px;
+      font-family: Arial, sans-serif;
+      background-color: #E6DDB0;
+      color: #1f2937;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    /* Security Lock Screen */
+    #lockScreen {
+      max-width: 400px;
+      margin: 80px auto;
+      background: rgba(255, 255, 255, 0.75);
+      padding: 28px;
+      border-radius: 12px;
+      border: 2px solid #8c8258;
+      text-align: center;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    #lockScreen h2 {
+      margin-top: 0;
+      color: #1f2937;
+    }
+    #passInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 1rem;
+      text-align: center;
+      text-transform: uppercase;
+      border: 1px solid #8c8258;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      background: #fffdf5;
+    }
+    #errorMsg {
+      color: #b91c1c;
+      font-size: 0.9rem;
+      font-weight: bold;
+      min-height: 20px;
+      margin-top: 8px;
+    }
+
+    /* Main App */
+    #appContent {
+      display: none;
+    }
+    .header-box {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    .week-title {
+      font-size: 1.3rem;
+      font-weight: bold;
+      text-align: center;
+      border: 1px dashed #6b6340;
+      background: rgba(255, 255, 255, 0.45);
+      padding: 6px 12px;
+      border-radius: 6px;
+      color: #1f2937;
+      width: 260px;
+    }
+    .controls-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+    button {
+      background-color: #2c3e50;
+      color: #ffffff;
+      border: none;
+      padding: 9px 14px;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+    button:hover {
+      background-color: #1a252f;
+    }
+    button.danger {
+      background-color: #991b1b;
+    }
+    button.danger:hover {
+      background-color: #7f1d1d;
+    }
+    button.plot-btn {
+      background-color: #15803d;
+      font-size: 1.05rem;
+      padding: 12px 26px;
+      display: block;
+      margin: 18px auto;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+    }
+    button.plot-btn:hover {
+      background-color: #166534;
+    }
+
+    /* Table Styling */
+    .table-wrap {
+      overflow-x: auto;
+      background: rgba(255, 255, 255, 0.65);
+      border-radius: 10px;
+      border: 2px solid #8c8258;
+      padding: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: center;
+    }
+    th, td {
+      border: 1px solid #8c8258;
+      padding: 8px 6px;
+    }
+    th {
+      background-color: #2c3e50;
+      color: #ffffff;
+      min-width: 110px;
+    }
+    th:first-child, td:first-child {
+      min-width: 115px;
+      font-weight: bold;
+      background-color: #d6cca0;
+      color: #1f2937;
+      position: sticky;
+      left: 0;
+      z-index: 1;
+    }
+    th:first-child {
+      background-color: #1f2937;
+      color: #ffffff;
+    }
+    .col-header-input {
+      width: 100%;
+      background: transparent;
+      border: none;
+      border-bottom: 1px dashed #cbd5e1;
+      color: #ffffff;
+      font-weight: bold;
+      text-align: center;
+      font-size: 0.9rem;
+      padding: 3px;
+    }
+    .col-header-input:focus {
+      outline: none;
+      border-bottom: 1px solid #ffffff;
+    }
+    .val-btn {
+      width: 54px;
+      height: 34px;
+      border-radius: 6px;
+      font-weight: bold;
+      font-size: 0.95rem;
+      border: 1px solid #6b6340;
+      cursor: pointer;
+    }
+    .val-0 {
+      background-color: #f5f1dc;
+      color: #4b5563;
+    }
+    .val-05 {
+      background-color: #fef08a;
+      color: #854d0e;
+    }
+    .val-1 {
+      background-color: #bbf7d0;
+      color: #14532d;
+    }
+
+    /* Graph Box */
+    .chart-wrap {
+      background: rgba(255, 255, 255, 0.78);
+      border-radius: 10px;
+      border: 2px solid #8c8258;
+      padding: 16px;
+      margin-bottom: 20px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- One-Time Security Screen -->
+  <div id="lockScreen">
+    <h2>Enter Access Code</h2>
+    <p style="font-size: 0.9rem; color: #4b5563;">Enter your academy code to unlock the tracker on this device.</p>
+    <input type="text" id="passInput" placeholder="Enter code..." />
+    <button onclick="checkCode()" style="width: 100%;">Unlock Tracker</button>
+    <div id="errorMsg"></div>
+  </div>
+
+  <!-- Main Tracker Content -->
+  <div id="appContent" class="container">
+    <div class="header-box">
+      <input type="text" id="weekTitle" class="week-title" value="06th Nov to 12th Nov" />
+    </div>
+
+    <div class="controls-bar">
+      <button onclick="addColumn()">+ Add Column</button>
+      <button onclick="removeColumn()">- Remove Last Column</button>
+      <button class="danger" onclick="resetScores()">Reset Scores</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr id="headerRow"></tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+
+    <button class="plot-btn" onclick="plotGraph()">Plot Graph</button>
+
+    <div class="chart-wrap">
+      <canvas id="trackerChart" height="220"></canvas>
+    </div>
+  </div>
+
+  <script>
+    const VALID_CODES = ["AFA", "IMA", "OTA", "INA"];
+    const AUTH_KEY = "cadet_tracker_unlocked_v1";
+    const DATA_KEY = "cadet_tracker_data_v1";
+    const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+    // Check if already unlocked on this device
+    function initAuth() {
+      if (localStorage.getItem(AUTH_KEY) === "true") {
+        showApp();
+      }
+    }
+
+    function checkCode() {
+      const entered = document.getElementById("passInput").value.trim().toUpperCase();
+      if (VALID_CODES.includes(entered)) {
+        localStorage.setItem(AUTH_KEY, "true");
+        showApp();
+      } else {
+        document.getElementById("errorMsg").textContent = "Invalid code. Try again.";
+      }
+    }
+
+    document.getElementById("passInput").addEventListener("keypress", function(e) {
+      if (e.key === "Enter") checkCode();
+    });
+
+    function showApp() {
+      document.getElementById("lockScreen").style.display = "none";
+      document.getElementById("appContent").style.display = "block";
+      renderTable();
+      initChart();
+    }
+
+    // Default State
+    let state = JSON.parse(localStorage.getItem(DATA_KEY)) || {
+      week: "06th Nov to 12th Nov",
+      columns: [
+        "Attended",
+        "Assignments",
+        "Hobbies",
+        "Sports",
+        "Exercises",
+        "Self-study",
+        "Geopoliticals"
+      ],
+      scores: {} // key: "dayIdx-colIdx" -> 0, 0.5, or 1
+    };
+
+    const weekTitleEl = document.getElementById("weekTitle");
+    weekTitleEl.value = state.week;
+    weekTitleEl.addEventListener("input", () => {
+      state.week = weekTitleEl.value;
+      saveState();
+    });
+
+    function saveState() {
+      localStorage.setItem(DATA_KEY, JSON.stringify(state));
+    }
+
+    function renderTable() {
+      const headerRow = document.getElementById("headerRow");
+      const tbody = document.getElementById("tableBody");
+      headerRow.innerHTML = "";
+      tbody.innerHTML = "";
+
+      // Top-left cell: "Day"
+      const dayTh = document.createElement("th");
+      dayTh.textContent = "Day";
+      headerRow.appendChild(dayTh);
+
+      // Editable Goal Columns
+      state.columns.forEach((colName, cIdx) => {
+        const th = document.createElement("th");
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "col-header-input";
+        input.value = colName;
+        input.addEventListener("input", () => {
+          state.columns[cIdx] = input.value;
+          saveState();
+        });
+        th.appendChild(input);
+        headerRow.appendChild(th);
+      });
+
+      // 7 Day Rows (Rows 2 to 8)
+      DAYS.forEach((dayName, dIdx) => {
+        const tr = document.createElement("tr");
+        const dayTd = document.createElement("td");
+        dayTd.textContent = dayName;
+        tr.appendChild(dayTd);
+
+        state.columns.forEach((_, cIdx) => {
+          const td = document.createElement("td");
+          const key = `${dIdx}-${cIdx}`;
+          const val = state.scores[key] !== undefined ? state.scores[key] : 0;
+
+          const btn = document.createElement("button");
+          btn.className = "val-btn " + getValClass(val);
+          btn.textContent = val;
+          btn.onclick = () => cycleScore(dIdx, cIdx, btn);
+
+          td.appendChild(btn);
+          tr.appendChild(td);
+        });
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    function getValClass(val) {
+      if (val === 1) return "val-1";
+      if (val === 0.5) return "val-05";
+      return "val-0";
+    }
+
+    function cycleScore(dIdx, cIdx, btn) {
+      const key = `${dIdx}-${cIdx}`;
+      const current = state.scores[key] !== undefined ? state.scores[key] : 0;
+      let next = 0;
+      if (current === 0) next = 0.5;
+      else if (current === 0.5) next = 1;
+      else next = 0;
+
+      state.scores[key] = next;
+      btn.textContent = next;
+      btn.className = "val-btn " + getValClass(next);
+      saveState();
+    }
+
+    function addColumn() {
+      const nextNum = state.columns.length + 1;
+      state.columns.push(`Goal ${nextNum}`);
+      saveState();
+      renderTable();
+    }
+
+    function removeColumn() {
+      if (state.columns.length <= 1) {
+        alert("You need at least 1 goal column.");
+        return;
+      }
+      const removedIdx = state.columns.length - 1;
+      state.columns.pop();
+      for (let d = 0; d < 7; d++) {
+        delete state.scores[`${d}-${removedIdx}`];
+      }
